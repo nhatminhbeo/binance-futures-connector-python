@@ -4,18 +4,19 @@ from autobahn.twisted.websocket import WebSocketClientProtocol
 
 
 class BinanceClientProtocol(WebSocketClientProtocol):
-    def __init__(self, factory, payload=None):
+    def __init__(self, factory, payload=None, logger=None):
         super().__init__()
         self.factory = factory
         self.payload = payload
+        self.logger = logging if logger is None else logger
 
     def onOpen(self):
         self.factory.protocol_instance = self
 
     def onConnect(self, response):
-        logging.info("Server connected")
+        self.logger.info("Server connected")
         if self.payload:
-            logging.info("Sending message to Server: {}".format(self.payload))
+            self.logger.info("Sending message to Server: {}".format(self.payload))
             self.sendMessage(self.payload, isBinary=False)
         # reset the delay after reconnecting
         self.factory.resetDelay()
@@ -30,16 +31,16 @@ class BinanceClientProtocol(WebSocketClientProtocol):
                 self.factory.callback(payload_obj)
 
     def onClose(self, wasClean, code, reason):
-        logging.warn(
+        self.logger.warn(
             "WebSocket connection closed: {0}, code: {1}, clean: {2}, reason: {0}".format(
                 reason, code, wasClean
             )
         )
 
     def onPing(self, payload):
-        logging.info("Received Ping from server")
+        self.logger.info("Received Ping from server")
         self.sendPong()
-        logging.info("Responded Pong to server")
+        self.logger.info("Responded Pong to server")
 
     def onPong(self, payload):
-        logging.info("Received Pong from server")
+        self.logger.info("Received Pong from server")

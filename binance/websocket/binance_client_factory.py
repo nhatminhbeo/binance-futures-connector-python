@@ -12,19 +12,20 @@ class BinanceReconnectingClientFactory(ReconnectingClientFactory):
 
 
 class BinanceClientFactory(WebSocketClientFactory, BinanceReconnectingClientFactory):
-    def __init__(self, *args, payload=None, **kwargs):
+    def __init__(self, *args, payload=None, logger=None, **kwargs):
         WebSocketClientFactory.__init__(self, *args, **kwargs)
         self.protocol_instance = None
         self.base_client = None
         self.payload = payload
+        self.logger = logging if logger is None else logger
 
     _reconnect_error_payload = {"e": "error", "m": "Max reconnect retries reached"}
 
     def startedConnecting(self, connector):
-        logging.info("Start to connect....")
+        self.logger.info("Start to connect....")
 
     def clientConnectionFailed(self, connector, reason):
-        logging.error(
+        self.logger.error(
             "Can't connect to server. Reason: {}. Retrying: {}".format(
                 reason, self.retries + 1
             )
@@ -34,7 +35,7 @@ class BinanceClientFactory(WebSocketClientFactory, BinanceReconnectingClientFact
             self.callback(self._reconnect_error_payload)
 
     def clientConnectionLost(self, connector, reason):
-        logging.error(
+        self.logger.error(
             "Lost connection to Server. Reason: {}. Retrying: {}".format(
                 reason, self.retries + 1
             )
@@ -44,4 +45,4 @@ class BinanceClientFactory(WebSocketClientFactory, BinanceReconnectingClientFact
             self.callback(self._reconnect_error_payload)
 
     def buildProtocol(self, addr):
-        return BinanceClientProtocol(self, payload=self.payload)
+        return BinanceClientProtocol(self, payload=self.payload, logger=self.logger)

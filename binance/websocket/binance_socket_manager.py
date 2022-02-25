@@ -10,7 +10,7 @@ from binance.websocket.binance_client_factory import BinanceClientFactory
 
 
 class BinanceSocketManager(threading.Thread):
-    def __init__(self, stream_url):
+    def __init__(self, stream_url, logger=None):
         threading.Thread.__init__(self)
 
         self.factories = {}
@@ -18,6 +18,7 @@ class BinanceSocketManager(threading.Thread):
         self.stream_url = stream_url
         self._conns = {}
         self._user_callback = None
+        self.logger = logging if logging is None else logger
 
     def _start_socket(
         self, stream_name, payload, callback, is_combined=False, is_live=True
@@ -39,9 +40,9 @@ class BinanceSocketManager(threading.Thread):
                 factory_url = factory_url + "/" + payload_obj["params"]
             payload = None
 
-        logging.info("Connection with URL: {}".format(factory_url))
+        self.logger.info("Connection with URL: {}".format(factory_url))
 
-        factory = BinanceClientFactory(factory_url, payload=payload)
+        factory = BinanceClientFactory(factory_url, payload=payload, logger=self.logger)
         factory.base_client = self
         factory.protocol = BinanceClientProtocol
         factory.setProtocolOptions(
@@ -64,7 +65,7 @@ class BinanceSocketManager(threading.Thread):
             return
 
         # disable reconnecting if we are closing
-        self._conns[conn_key].factory = WebSocketClientFactory(self.stream_url)
+        self._conns[conn_key].factory = WebSocketClientFactory(self.stream_url, logger=self.logger)
         self._conns[conn_key].disconnect()
         del self._conns[conn_key]
 
