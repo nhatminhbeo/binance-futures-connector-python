@@ -35,6 +35,7 @@ class API(object):
         proxies=None,
         show_limit_usage=False,
         show_header=False,
+        logger=None
     ):
         self.key = key
         self.secret = secret
@@ -50,6 +51,7 @@ class API(object):
                 "X-MBX-APIKEY": key,
             }
         )
+        self.logger = logging if logger is None else logger
 
         if base_url:
             self.base_url = base_url
@@ -104,7 +106,7 @@ class API(object):
         if payload is None:
             payload = {}
         url = self.base_url + url_path
-        logging.debug("url: " + url)
+        self.logger.debug("url: " + url)
         params = cleanNoneValue(
             {
                 "url": url,
@@ -114,7 +116,7 @@ class API(object):
             }
         )
         response = self._dispatch_request(http_method)(**params)
-        logging.debug("raw response from server:" + response.text)
+        self.logger.debug("raw response from server:" + response.text)
         self._handle_exception(response)
 
         try:
